@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Snake - Gatosauriocrack</title>
+    <link rel="icon" type="image/png" href="snake.png">
+    <link rel="apple-touch-icon" href="snake.png">
+    <link rel="shortcut icon" href="snake.png">
+    <link rel="stylesheet" href="style.css"> 
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <div id="notification-icon"></div>
+    <div id="scoreContainer">
+        <div id="score">Puntuación: 0</div>
+        <div id="highScore">Mejor: 0</div>
+    </div>
+    <canvas id="gameCanvas" width="375" height="375"></canvas>
+    <div id="mainControls">
+        <div id="controls">
+            <button id="up" class="control-btn" data-direction="ArrowUp">↑</button>
+            <button id="left" class="control-btn" data-direction="ArrowLeft">←</button>
+            <button id="right" class="control-btn" data-direction="ArrowRight">→</button>
+            <button id="down" class="control-btn" data-direction="ArrowDown">↓</button>
+        </div>
+        <button id="pauseButton" style="display: none;"><i class="fa-solid fa-pause"></i></button>
+    </div>
+    <div id="startModal" class="game-modal" style="display: flex;">
+        <div class="modal-content">
+            <button id="btnInformacion">
+                <i class="fa-solid fa-circle-info buton-info"></i>
+            </button>
+            <button id="btnClasificatoria">
+                <span class="emoji">🏆</span>
+                <span class="text">Clasificación</span>
+            </button>
+            <h2>Snake</h2> 
+            <h2>(disfruta)</h2>
+            <p style="color: var(--color-texto); margin-bottom: 20px;">Selecciona la velocidad:</p>
+            <button class="speed-btn" data-speed="200" data-name="Lento (Fácil)">Lento (Fácil)</button>
+            <button class="speed-btn" data-speed="100" data-name="Normal (Medio)">Normal (Medio)</button>
+            <button class="speed-btn" data-speed="60" data-name="Rápido (Difícil)">Rápido (Difícil)</button>
+            <hr style="width: 100%; margin: 20px 0; border-top: 1px solid #555;">
+            <p style="margin-top: 10px; font-size: 0.9em; color: var(--color-naranja-claro);"><span id="sessionStatus">Sesión: No iniciada</span></p>
+            <button onclick="openAuthModal()" id="mainLoginButton" style="background-color: #007bff; color: white; padding: 10px 20px; display: block;">
+                Iniciar Sesión
+            </button>
+            <button onclick="logout()" id="mainLogoutButton" style="background-color: var(--color-rojo-salir); color: white; padding: 10px 20px; display: none;">
+                Cerrar Sesión
+            </button>
+        </div>
+    </div>
+    <div id="authModal" class="game-modal">
+        <div class="modal-content">
+            <h2 id="modalTitle" style="font-size: 2em;">Elige cómo iniciar sesión</h2>
+            <div id="authMessage" style="color: #F44336; margin: 10px 0;"></div>
+            <div id="socialAuthContainer" class="social-auth-container">
+                <button class="social-auth-btn google-btn" onclick="signInWithGoogle()">
+                    <i class="fab fa-google"></i> Iniciar Sesión con Google
+                </button>
+            </div>
+             <button onclick="closeAuthModal()" style="margin-top: 20px; padding: 10px 20px; background-color: #555; color: white; font-size: 1em;">
+                ← Regresar
+            </button>
+        </div>
+    </div>
+    <div id="gameOverModal" class="game-modal">
+        <div class="modal-content">
+            <h2>¡Game Over!</h2>
+            <div class="modal-score">Puntuación Final: <span id="finalScoreValue">0</span></div>
+            <div class="modal-score" style="margin-top: -20px; color: var(--color-naranja-principal);">Mejor Puntaje Local: <span id="finalHighScoreValue">0</span></div>
+            <button id="playAgainBtn">
+                <div class="play-icon"></div>
+            </button>
+        </div>
+    </div>
+    <div id="pauseModal" class="game-modal">
+        <div class="modal-content">
+            <h2>JUEGO EN PAUSA</h2>
+            <button id="resumeButton"><i class="fa-solid fa-play"></i> CONTINUAR</button>
+            <button id="exitButton"><i class="fa-solid fa-right-from-bracket"></i> SALIR DE LA PARTIDA</button>
+        </div>
+    </div>
+    <div id="infoModal" class="game-modal">
+        <div class="modal-content">
+            <div class="info-header">
+                <h2>Snake</h2>
+                <button id="closeInfoBtn">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <p>Bienvenido. Este es el clásico juego de la Serpiente (Snake), diseñado para ser fácil y divertido de jugarlo.</p>
+            <p>El objetivo es comer la comida (las bolitas) que te hace crecer y obtener el puntaje más alto.</p>
+            <hr style='width: 100%; margin: 15px 0; border-top: 1px solid var(--color-naranja-principal); opacity: 0.3;'>
+            <p class="small-text">Al descargar el apk e instalarlo y/o jugar los juegos en línea estarás aceptando los: <a href="https://gatosauriocrackworl.com/Web/©" target="_blank" class="eula-link"> Acuerdos de Licencia (EULA)</a></p>
+            <p>Si estás en la <b>web</b>, puedes descargar el APK. <b>Nota:</b> La descarga será inmediata.</p>
+            <a href='https://gatosauriocrackworl.com/snake/Descarga/' class='info-btn-action' download>
+                <i class='fa-brands fa-android'></i> Descargar APK
+            </a>
+            <p>Si estás en la <b>app APK</b>, puedes jugarlo en la web. <b>Nota:</b> En la vercion Apk no se puede registrar los récords en la tabla clasificatoria.</p>
+            <a href='https://gatosauriocrackworl.com/snake/' class='info-btn-action' target="_blank">
+                <i class='fa-solid fa-globe'></i> Jugar en la Web
+            </a>
+            <hr style='width: 100%; margin: 15px 0; border-top: 1px solid var(--color-naranja-principal); opacity: 0.3;'>
+            <p>Puedes descubrir más juegos y contenido aquí:</p>
+        <a href='https://gatosauriocrackworl.com/Web/' class='info-btn-action' target="_blank">
+            <i class='fa-solid fa-gamepad'></i> Más Juegos y Contenido
+        </a>
+            <hr style='width: 100%; margin: 15px 0; border-top: 1px solid var(--color-naranja-principal); opacity: 0.3;'>
+            <p>Si deseas guardar tu récord en la <b>clasificación global</b>, debes iniciar sesión con Google.</p>
+            <div style="font-size: 0.8em; margin-top: 20px; color: #aaa;">
+                &copy; 2025 Gatosauriocrack. Todos los derechos reservados
+            </div>
+        </div>
+    </div>
+    <script src="script.js"></script> 
+</body>
+</html>
+
